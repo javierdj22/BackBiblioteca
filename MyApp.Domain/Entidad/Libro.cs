@@ -1,5 +1,4 @@
-﻿using MyApp.Domain.DTOs;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace MyApp.Domain.Entities
 {

@@ -9,18 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Interfaz\IProductoService.cs" />
-    <Compile Remove="Interfaz\ProductoService.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MyApp.Domain\MyApp.Domain.csproj" />
-    <ProjectReference Include="..\MyApp.Infrastructure\MyApp.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

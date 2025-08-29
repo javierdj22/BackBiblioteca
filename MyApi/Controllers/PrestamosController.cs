@@ -1,10 +1,13 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MyApp.Domain.DTOs;
-using MyApp.Domain.Entities;
+using MyApp.Application.Interfaces;
+using MyApp.Application.DTOs;
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MyApp.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class PrestamosController : ControllerBase
@@ -16,25 +19,29 @@ namespace MyApp.Api.Controllers
             _prestamoService = prestamoService;
         }
 
+        // GET: api/prestamos
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _prestamoService.GetAllLibrosAsync();
+            if (result == null || result.Count == 0)
+                throw new KeyNotFoundException();  // Lanza la excepción sin mensaje
+
             return Ok(result);
         }
 
+        // POST: api/prestamos
         [HttpPost]
-        public async Task<IActionResult> RegistrarPrestamo([FromBody] PrestamoRequestDto request)
+        public async Task<IActionResult> RegistrarPrestamo([FromBody] LibroDto request)
         {
-            try
-            {
-                var result = await _prestamoService.RegistrarPrestamoAsync(request);
-                return Ok(new { success = result, message = "Préstamo registrado con éxito." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));  // Lanza una excepción sin mensaje
+
+            var result = await _prestamoService.RegistrarPrestamoAsync(request);
+            if (!result)
+                throw new InvalidOperationException();  // Lanza una excepción sin mensaje
+
+            return Ok();  // Solo el estado de la operación
         }
     }
 }

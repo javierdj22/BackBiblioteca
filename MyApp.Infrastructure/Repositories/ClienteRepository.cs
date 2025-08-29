@@ -1,11 +1,6 @@
-﻿using Dapper;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using MyApp.Domain.DTOs;
+﻿using Microsoft.EntityFrameworkCore;
 using MyApp.Domain.Entities;
-using MyApp.Domain.Repositories;
-using System.Data;
-using System.Threading.Tasks;
+using MyApp.Domain.Interfaces;
 
 namespace MyApp.Infrastructure.Repositories
 {
@@ -18,7 +13,7 @@ namespace MyApp.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<List<Cliente>> GetAllAsync()
+        public async Task<IEnumerable<Cliente>> GetAllAsync()
         {
             return await _context.Clientes.ToListAsync();
         }
@@ -28,27 +23,31 @@ namespace MyApp.Infrastructure.Repositories
             return await _context.Clientes.FindAsync(id);
         }
 
-        public async Task AddAsync(Cliente cliente)
+        public async Task<int> CreateAsync(Cliente cliente)
         {
             _context.Clientes.Add(cliente);
             await _context.SaveChangesAsync();
+            return cliente.Id;
         }
 
-        public async Task UpdateAsync(Cliente cliente)
+        public async Task<bool> UpdateAsync(int id, Cliente cliente)
         {
-            _context.Clientes.Update(cliente);
+            var existing = await _context.Clientes.FindAsync(id);
+            if (existing == null) return false;
+
+            _context.Entry(existing).CurrentValues.SetValues(cliente);
             await _context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(Cliente cliente)
+        public async Task<bool> DeleteAsync(int id)
         {
+            var cliente = await _context.Clientes.FindAsync(id);
+            if (cliente == null) return false;
+
             _context.Clientes.Remove(cliente);
             await _context.SaveChangesAsync();
-        }
-
-        public async Task<bool> ExistsAsync(int id)
-        {
-            return await _context.Clientes.AnyAsync(c => c.Id == id);
+            return true;
         }
     }
 }

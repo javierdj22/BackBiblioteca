@@ -1,51 +1,112 @@
-﻿using Newtonsoft.Json;
-using System.Net;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
-public class ExceptionMiddleware
+namespace MyApp.API.Middlewares
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionMiddleware> _logger;
-
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+    public class ExceptionMiddleware
     {
-        _next = next;
-        _logger = logger;
-    }
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionMiddleware> _logger;
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        var originalResponseBodyStream = context.Response.Body;
-
-        using (var memoryStream = new MemoryStream())
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
         {
-            context.Response.Body = memoryStream;
+            _next = next;
+            _logger = logger;
+        }
 
+        public async Task InvokeAsync(HttpContext httpContext)
+        {
             try
             {
-                await _next(context); // Continuar con el siguiente middleware
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                await memoryStream.CopyToAsync(originalResponseBodyStream); // Copiar al cliente la respuesta
+                // Llama al siguiente middleware en el pipeline
+                await _next(httpContext);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ocurrió un error durante el procesamiento de la solicitud.");
-                await HandleExceptionAsync(context, ex); // Manejo de excepciones
+                // Manejo de excepciones
+                await HandleExceptionAsync(httpContext, ex);
             }
         }
-    }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
-    {
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-        var errorDetails = new
+        private Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            message = "Ocurrió un error interno en el servidor.",
-            detail = exception.Message
-        };
+            // Loguea la excepción para rastrear errores
+            _logger.LogError(exception, "An error occurred");
 
-        // Enviar la respuesta de error como JSON
-        await context.Response.WriteAsync(JsonConvert.SerializeObject(errorDetails));
+            var response = context.Response;
+            response.ContentType = "application/json";
+
+            var statusCode = StatusCodes.Status500InternalServerError;
+            var message = "Ocurrió un error inesperado.";
+
+            // Mapeo de excepciones a mensajes claros
+            if (exception is KeyNotFoundException keyNotFoundException)
+            {
+                statusCode = StatusCodes.Status404NotFound;
+                message = MapKeyNotFoundMessage(keyNotFoundException.Message);
+            }
+            else if (exception is ArgumentNullException)
+            {
+                statusCode = StatusCodes.Status400BadRequest;
+                message = "El argumento proporcionado es nulo.";
+            }
+            else if (exception is ArgumentException)
+            {
+                statusCode = StatusCodes.Status400BadRequest;
+                message = "El id proporcionado no coincide con el id de la URL.";
+            }
+            else if (exception is InvalidOperationException)
+            {
+                statusCode = StatusCodes.Status400BadRequest;
+                message = "La operación no es válida en este contexto.";
+            }
+
+            // Crea la respuesta con el mensaje y el código de estado
+            context.Response.StatusCode = statusCode;
+            return context.Response.WriteAsync(new
+            {
+                statusCode,
+                message
+            }.ToString());
+        }
+
+        // Método para mapear mensajes de KeyNotFoundException
+        private string MapKeyNotFoundMessage(string exceptionMessage)
+        {
+            // Mapeamos los mensajes relacionados con el id para crear el mensaje dinámico
+            if (exceptionMessage.Contains("id"))
+            {
+                var match = Regex.Match(exceptionMessage, @"(\d+)");  // Extraemos el id de la excepción
+                if (match.Success)
+                {
+                    var id = match.Value;
+                    return $"Cliente con id {id} no encontrado.";
+                }
+            }
+
+            // Si no encontramos el id, devolvemos un mensaje genérico
+            return "Elemento no encontrado.";
+        }
+
+        // Método para mapear el mensaje de ArgumentException
+        private string MapArgumentExceptionMessage(string exceptionMessage)
+        {
+            // En este caso, el mensaje de ArgumentException tiene que ver con el id
+            if (exceptionMessage.Contains("id"))
+            {
+                var match = Regex.Match(exceptionMessage, @"(\d+)");  // Extraemos el id de la excepción
+                if (match.Success)
+                {
+                    var id = match.Value;
+                    return $"El id proporcionado no coincide con el id de la URL ({id}).";
+                }
+            }
+
+            // Si no podemos mapearlo, devolvemos un mensaje genérico
+            return "El argumento proporcionado es inválido.";
+        }
     }
 }

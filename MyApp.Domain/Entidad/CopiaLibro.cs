@@ -5,5 +5,6 @@
         public int Id { get; set; }
         public string CodigoBarras { get; set; }
         public bool Disponible { get; set; }
+        public int LibroId { get; set; }
     }
 }

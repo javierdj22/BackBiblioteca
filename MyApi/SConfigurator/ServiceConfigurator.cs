@@ -1,28 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using MyApp.Application.Services;
-using MyApp.Domain.Repositories;
-using MyApp.Infrastructure.Repositories;
-using Npgsql;
-using System.Data;
 using System.Text;
-using System.Data.SqlClient;
 
 namespace MyApp.API.Configuration
 {
     public static class ServiceConfiguration
     {
-        // Configuración de los servicios de la aplicación
-        public static void AddAppServices(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddTransient<IDbConnection>(sp =>
-                new SqlConnection(configuration.GetConnectionString("DefaultConnection")));
-
-            services.AddScoped<IClienteRepository, ClienteRepository>();
-            services.AddScoped<IClienteService, ClienteService>();
-            services.AddScoped<IPrestamoService, PrestamoService>();
-        }
 
         // Configuración de Swagger
         public static void AddSwaggerConfig(this IServiceCollection services)

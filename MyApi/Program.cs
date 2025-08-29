@@ -1,18 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MyApp.API.Configuration;
-using System.Data;
-using System.Data.SqlClient;
+﻿using MyApp.API.Configuration;
+using MyApp.API.Middlewares;
+using MyApp.Application.Interfaces;
+using MyApp.Application.Services;
+using MyApp.Infrastructure.Intranet.Dependencia;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 🔹 Configuración de servicios
 
-// Registrar el DbContext para SQL Server
-builder.Services.AddDbContext<LibraryDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Resto de servicios personalizados (tus métodos de extensión)
-builder.Services.AddAppServices(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // 🔹 Configuración de Swagger
 builder.Services.AddSwaggerConfig();
@@ -30,6 +29,13 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Agregar el middleware de excepciones al pipeline
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+// Registro del TokenService con la clave
+var secretKey = builder.Configuration["JwtSettings:SecretKey"];
+builder.Services.AddSingleton<ITokenService>(new TokenService(secretKey));
+
 // 🔹 Configuración de autenticación JWT
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
@@ -40,13 +46,12 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 builder.Services.AddControllers();
+;
 
 var app = builder.Build();
 
-// 🔹 Middleware
-//app.UseHttpsRedirection();
 
-// 🔹 Manejo global de errores
+// Usa el middleware para manejar las excepciones
 app.UseMiddleware<ExceptionMiddleware>();
 
 // 🔹 CORS

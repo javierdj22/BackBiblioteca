@@ -1,7 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;  // <- Esta línea es clave
-using MyApp.Domain.DTOs;
+﻿using Microsoft.EntityFrameworkCore; 
 using MyApp.Domain.Entities;
-using System.Collections.Generic;
 
 public class LibraryDbContext : DbContext
 {

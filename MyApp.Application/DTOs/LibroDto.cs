@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace MyApp.Domain.DTOs
+﻿namespace MyApp.Application.DTOs
 {
-    public class LibroResponseDto
+    public class LibroDto
     {
         public int Id { get; set; }
         public string Titulo { get; set; }
@@ -11,6 +8,6 @@ namespace MyApp.Domain.DTOs
         public string Editorial { get; set; }
         public int AnioPublicacion { get; set; }
         public string Genero { get; set; }
-        public List<CopiaLibroResponseDto> CopiasDisponibles { get; set; }
+        public List<CopiaLibroDto> CopiasDisponibles { get; set; }
     }
 }
