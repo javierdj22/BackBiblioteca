@@ -11,3 +11,9 @@ public class LibraryDbContext : DbContext
     public DbSet<CopiaLibro> CopiaLibro { get; set; }
     public DbSet<Libro> Libro { get; set; }
 }
+public class PostgresDbContext : DbContext
+{
+    public PostgresDbContext(DbContextOptions<PostgresDbContext> options) : base(options) { }
+
+    public DbSet<Usuarios> Usuarios { get; set; }
+}

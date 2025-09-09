@@ -15,7 +15,9 @@ namespace MyApp.Infrastructure.Repositories
 
         public async Task<IEnumerable<Cliente>> GetAllAsync()
         {
-            return await _context.Clientes.ToListAsync();
+            return await _context.Clientes
+                .FromSqlRaw("EXEC sp_ObtenerClientes")
+                .ToListAsync();
         }
 
         public async Task<Cliente?> GetByIdAsync(int id)

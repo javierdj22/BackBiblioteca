@@ -13,5 +13,7 @@
         public string Direccion { get; set; } = string.Empty;
         public string Ubigeo { get; set; } = string.Empty;
         public bool EnListaNegra { get; set; }
+        public string Fuente { get; set; }
+        public string? ErrorMensaje { get; set; }
     }
 }

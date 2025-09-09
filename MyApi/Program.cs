@@ -1,17 +1,16 @@
 ﻿using MyApp.API.Configuration;
 using MyApp.API.Middlewares;
 using MyApp.Application.Interfaces;
+using MyApp.Application.DependencyInjection;
 using MyApp.Application.Services;
 using MyApp.Infrastructure.Intranet.Dependencia;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Configuración de servicios
-
-
 // Resto de servicios personalizados (tus métodos de extensión)
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
 
 // 🔹 Configuración de Swagger
 builder.Services.AddSwaggerConfig();

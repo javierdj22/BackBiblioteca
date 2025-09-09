@@ -30,7 +30,7 @@ namespace MyApp.Api.Controllers
             if (string.IsNullOrEmpty(token))
                 return Unauthorized(new { message = "Credenciales inválidas." });
 
-            return Ok(new { token });
+            return Ok(new { Authorization = $"Bearer {token}" });
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using MyApp.Application.DTOs;
+﻿using Microsoft.Extensions.Logging;
+using MyApp.Application.DTOs;
 using MyApp.Application.Interfaces;
 using MyApp.Domain.Entities;
 using MyApp.Domain.Interfaces;
@@ -7,22 +8,76 @@ namespace MyApp.Application.Services
 {
     public class ClienteService : IClienteService
     {
-        private readonly IClienteRepository _repository;
+        private readonly IClienteRepository _clienteRepository;
+        private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ILogger<ClienteService> _logger;
 
-        public ClienteService(IClienteRepository repository)
+        public ClienteService(IClienteRepository clienteRepository, IUsuarioRepository usuarioRepository, ILogger<ClienteService> logger)
         {
-            _repository = repository;
+            _clienteRepository = clienteRepository;
+            _usuarioRepository = usuarioRepository;
+            _logger = logger;
         }
 
+        //public async Task<IEnumerable<ClienteDto>> GetAllAsync()
+        //{
+        //    //var clientes = await _clienteRepository.GetAllAsync();
+        //    //return clientes.Select(MapToDto);
+
+        //    var clientes = await _clienteRepository.GetAllAsync();
+        //    var usuarios = await _usuarioRepository.GetAllNpgAsync();
+
+        //    var clientesDto = clientes.Select(MapToDto);
+        //    var usuariosDto = usuarios.Select(MapUsuarioToDto);
+        //    return clientesDto.Concat(usuariosDto);
+        //}
         public async Task<IEnumerable<ClienteDto>> GetAllAsync()
         {
-            var clientes = await _repository.GetAllAsync();
-            return clientes.Select(MapToDto);
+            var clientesDto = new List<ClienteDto>();
+
+            // SQL Server
+            try
+            {
+                var clientes = await _clienteRepository.GetAllAsync();
+                clientesDto.AddRange(clientes.Select(MapToDto));
+            }
+            catch (Exception ex)
+            {
+                clientesDto.Add(new ClienteDto
+                {
+                    Id = 0,
+                    Nombres = "Error",
+                    Apellidos = "SQL Server",
+                    Fuente = "sql",
+                    ErrorMensaje = $"Error SQL: {ex.Message}"
+                });
+            }
+
+            // PostgreSQL
+            try
+            {
+                var usuarios = await _usuarioRepository.GetAllNpgAsync();
+                clientesDto.AddRange(usuarios.Select(MapUsuarioToDto));
+            }
+            catch (Exception ex)
+            {
+                clientesDto.Add(new ClienteDto
+                {
+                    Id = 0,
+                    Nombres = "Error",
+                    Apellidos = "PostgreSQL",
+                    Fuente = "postgres",
+                    ErrorMensaje = $"Error PostgreSQL: {ex.Message}"
+                });
+            }
+
+            return clientesDto;
         }
+
 
         public async Task<ClienteDto?> GetByIdAsync(int id)
         {
-            var cliente = await _repository.GetByIdAsync(id);
+            var cliente = await _clienteRepository.GetByIdAsync(id);
             if (cliente == null)
                 return null;
 
@@ -35,12 +90,12 @@ namespace MyApp.Application.Services
             entity.Id = 0;
             entity.EnListaNegra = false;
 
-            return await _repository.CreateAsync(entity);
+            return await _clienteRepository.CreateAsync(entity);
         }
 
         public async Task<bool> UpdateAsync(int id, ClienteDto dto)
         {
-            var existingEntity = await _repository.GetByIdAsync(id);
+            var existingEntity = await _clienteRepository.GetByIdAsync(id);
             if (existingEntity == null)
                 return false;
 
@@ -53,12 +108,12 @@ namespace MyApp.Application.Services
             existingEntity.Ubigeo = dto.Ubigeo;
             existingEntity.EnListaNegra = dto.EnListaNegra;
 
-            return await _repository.UpdateAsync(id, existingEntity);
+            return await _clienteRepository.UpdateAsync(id, existingEntity);
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            return await _repository.DeleteAsync(id);
+            return await _clienteRepository.DeleteAsync(id);
         }
 
         private ClienteDto MapToDto(Cliente cliente)
@@ -73,7 +128,8 @@ namespace MyApp.Application.Services
                 Email = cliente.Email,
                 Direccion = cliente.Direccion,
                 Ubigeo = cliente.Ubigeo,
-                EnListaNegra = cliente.EnListaNegra
+                EnListaNegra = cliente.EnListaNegra,
+                Fuente = "sql"
             };
         }
 
@@ -89,6 +145,16 @@ namespace MyApp.Application.Services
                 Direccion = dto.Direccion,
                 Ubigeo = dto.Ubigeo,
                 EnListaNegra = dto.EnListaNegra
+            };
+        }
+        private ClienteDto MapUsuarioToDto(Usuarios usuario)
+        {
+            return new ClienteDto
+            {
+                Id = usuario.id,
+                Nombres = usuario.username,
+                Apellidos = usuario.password_hash,
+                Fuente = "postgres"
             };
         }
     }
